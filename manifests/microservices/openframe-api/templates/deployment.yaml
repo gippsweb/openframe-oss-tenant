@@ -34,6 +34,8 @@ spec:
             - containerPort: 8091
               name: management
           env:
+            - name: OPENFRAME_SECURITY_JWT_ALLOWED_ISSUER_BASE
+              value: "http://openframe-authorization-server.microservices.svc.cluster.local:9005/sas"
             {{- if .Values.deployment.oss.ingress.ngrok.enabled }}
             - name: TENANT_HOST_URL
               value: {{ printf "https://%s" (required "deployment.oss.ingress.ngrok.url is required when ngrok ingress is enabled" .Values.deployment.oss.ingress.ngrok.url) | quote }}

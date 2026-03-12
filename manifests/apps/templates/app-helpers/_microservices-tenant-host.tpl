@@ -14,7 +14,6 @@
   namespace: microservices
   jqPathExpressions:
     - .spec.template.spec.containers[].env[] | select(.name=="TENANT_HOST_URL")
-    - .spec.template.spec.containers[].env[] | select(.name=="OPENFRAME_SECURITY_JWT_ALLOWED_ISSUER_BASE")
 {{- end }}
 
 {{- define "app-helpers.openframe-authorization-server.ignoreDifferences" -}}
@@ -33,5 +32,4 @@
   namespace: microservices
   jqPathExpressions:
     - .spec.template.spec.containers[].env[] | select(.name=="TENANT_HOST_URL")
-    - .spec.template.spec.containers[].env[] | select(.name=="OPENFRAME_SECURITY_JWT_ALLOWED_ISSUER_BASE")
 {{- end }}
