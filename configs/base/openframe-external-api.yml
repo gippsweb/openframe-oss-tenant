@@ -40,6 +40,13 @@ springdoc:
     displayRequestDuration: true
     
 openframe:
+  integration:
+    tactical-rmm:
+      url: http://tactical-nginx.integrated-tools.svc.cluster.local:8000
+    fleet-mdm:
+      url: http://fleetmdm-server.integrated-tools.svc.cluster.local:8070
+    meshcentral:
+      url: http://meshcentral-server.integrated-tools.svc.cluster.local:80
   oss-tenant:
     kafka:
       topics:
