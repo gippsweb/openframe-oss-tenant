@@ -33,6 +33,9 @@ spec:
               name: http
             - containerPort: 8093
               name: management
+          env:
+            - name: OPENFRAME_SECURITY_JWT_ALLOWED_ISSUER_BASE
+              value: "http://openframe-authorization-server.microservices.svc.cluster.local:9005/sas"
           envFrom:
             - configMapRef:
                 name: microservices
