@@ -47,7 +47,7 @@ spec:
               command: ["/bin/bash", "/usr/local/bin/readiness-command.sh"]
             initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 30
             failureThreshold: 3
           volumeMounts:
             - name: mongodb-storage

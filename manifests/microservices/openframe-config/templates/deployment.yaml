@@ -20,6 +20,23 @@ spec:
         prometheus.io/port: "8889"
         prometheus.io/path: "/management/{{ default .Values.global.image.tag .Values.image.tag }}/prometheus"
     spec:
+      initContainers:
+        - name: git-clone
+          image: alpine/git:latest
+          command:
+            - sh
+            - -c
+            - |
+              git clone --depth=1 https://$(GITHUB_ACTOR):$(GITHUB_PASSWORD)@github.com/gippsweb/openframe-oss-tenant /repo &&
+              git -C /repo remote remove origin &&
+              chmod -R 777 /repo/.git &&
+              echo CLONE_DONE
+          envFrom:
+            - secretRef:
+                name: github-credentials
+          volumeMounts:
+            - name: git-repo
+              mountPath: /repo
 
       containers:
         - name: openframe-config
@@ -38,23 +55,43 @@ spec:
           env:
             - name: RELEASE_VERSION
               value: "{{ default .Values.global.image.tag .Values.image.tag }}"
+            - name: SPRING_CLOUD_CONFIG_SERVER_GIT_URI
+              value: "file:///repo"
+            - name: SPRING_CLOUD_CONFIG_SERVER_GIT_CLONE_ON_START
+              value: "false"
+            - name: SPRING_CLOUD_CONFIG_SERVER_GIT_REFRESH_RATE
+              value: "0"
+            - name: SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT__LABEL
+              value: "main"
+            - name: MANAGEMENT_HEALTH_CONFIG_ENABLED
+              value: "false"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+              value: "true"
+
+          volumeMounts:
+            - name: git-repo
+              mountPath: /repo
 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
           livenessProbe:
             httpGet:
-              path: /xml/shared-logback-spring.xml
-              port: http
-            initialDelaySeconds: 60
+              path: /management/{{ default .Values.global.image.tag .Values.image.tag }}/health/liveness
+              port: management
+            initialDelaySeconds: 360
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: /xml/shared-logback-spring.xml
-              port: http
-            initialDelaySeconds: 60
+              path: /management/{{ default .Values.global.image.tag .Values.image.tag }}/health/readiness
+              port: management
+            initialDelaySeconds: 360
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 5
+
+      volumes:
+        - name: git-repo
+          emptyDir: {}
