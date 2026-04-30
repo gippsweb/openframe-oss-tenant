@@ -124,7 +124,7 @@ export function ScriptsTable() {
       const searchLower = params.search.toLowerCase().trim();
       filtered = filtered.filter(
         script =>
-          script.name.toLowerCase().includes(searchLower) || script.description.toLowerCase().includes(searchLower),
+          script.name?.toLowerCase().includes(searchLower) || script.description?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -397,7 +397,7 @@ export function ScriptsTable() {
       stickyHeader
     >
       <DataTable table={table}>
-        <DataTable.Header stickyHeader stickyHeaderOffset="top-[56px]" rightSlot={<DataTable.RowCount />} />
+        <DataTable.Header stickyHeader stickyHeaderOffset="top-[96px]" rightSlot={<DataTable.RowCount />} />
         <DataTable.Body
           loading={isLoading}
           skeletonRows={pageSize}

@@ -2,12 +2,12 @@
 
 import { DetailPageContainer } from '@flamingo-stack/openframe-frontend-core';
 import { CommandBox } from '@flamingo-stack/openframe-frontend-core/components/features';
+import { CheckIcon, Copy02Icon, PlayIcon } from '@flamingo-stack/openframe-frontend-core/components/icons-v2';
 import type { AutocompleteOption } from '@flamingo-stack/openframe-frontend-core/components/ui';
 import { Autocomplete } from '@flamingo-stack/openframe-frontend-core/components/ui';
 import { useToast } from '@flamingo-stack/openframe-frontend-core/hooks';
 import { DEFAULT_OS_PLATFORM, type OSPlatformId } from '@flamingo-stack/openframe-frontend-core/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Copy, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -17,6 +17,7 @@ import type { newDeviceContentQuery as NewDeviceContentQueryType } from '@/__gen
 import { OrgAvatar } from '@/app/components/shared';
 import { OsPlatformSelector } from '@/app/components/shared/os-platform-selector';
 import { isValidTag, type TagEntryWithId, TagsEditor } from '@/app/components/shared/tags';
+import { useCopyToClipboard } from '@/app/hooks/use-copy-to-clipboard';
 import { AVAILABLE_PLATFORMS, DISABLED_PLATFORMS } from '@/lib/platforms';
 import { AntivirusWarning } from '../components/antivirus-warning';
 import { useInstallCommand } from '../hooks/use-install-command';
@@ -138,15 +139,15 @@ export function NewDeviceContent() {
     return true;
   }, [form, initialKey, tags, toast]);
 
+  const { copy: doCopy, copied: commandCopied } = useCopyToClipboard({
+    successDescription: 'Installer command copied to clipboard',
+    errorDescription: 'Could not copy command',
+  });
+
   const copyCommand = useCallback(async () => {
     if (!(await validateBeforeAction())) return;
-    try {
-      await navigator.clipboard.writeText(command);
-      toast({ title: 'Command copied', description: 'Installer command copied to clipboard', variant: 'default' });
-    } catch {
-      toast({ title: 'Copy failed', description: 'Could not copy command', variant: 'destructive' });
-    }
-  }, [command, toast, validateBeforeAction]);
+    doCopy(command);
+  }, [command, doCopy, validateBeforeAction]);
 
   const runOnCurrentMachine = useCallback(async () => {
     if (!(await validateBeforeAction())) return;
@@ -228,6 +229,7 @@ export function NewDeviceContent() {
       title="New Device"
       backButton={{ label: 'Back to Devices', onClick: () => router.push('/devices') }}
       padding="none"
+      className="p-[var(--spacing-system-l)]"
     >
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -286,13 +288,17 @@ export function NewDeviceContent() {
           primaryAction={{
             label: 'Copy Command',
             onClick: copyCommand,
-            icon: <Copy className="w-5 h-5" />,
+            icon: commandCopied ? (
+              <CheckIcon className="w-5 h-5 text-[var(--ods-attention-green-success)]" />
+            ) : (
+              <Copy02Icon className="w-5 h-5" />
+            ),
             variant: 'primary',
           }}
           secondaryAction={{
             label: 'Run on Current Machine',
             onClick: runOnCurrentMachine,
-            icon: <Play className="w-5 h-5" />,
+            icon: <PlayIcon className="w-5 h-5" />,
             variant: 'outline',
           }}
         />
