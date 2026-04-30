@@ -27,6 +27,7 @@ spec:
             - sh
             - -c
             - |
+              rm -rf /repo &&
               git clone --depth=1 https://$(GITHUB_ACTOR):$(GITHUB_PASSWORD)@github.com/gippsweb/openframe-oss-tenant /repo &&
               git -C /repo remote remove origin &&
               chmod -R 777 /repo/.git &&
