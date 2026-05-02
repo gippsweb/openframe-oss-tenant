@@ -60,11 +60,17 @@ spec:
               mountPath: /opt/jmx-exporter
             {{- end }}
           {{- if .Values.probes.liveness.enabled }}
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8083
+            failureThreshold: 30
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: 8083
-            initialDelaySeconds: 90
+            initialDelaySeconds: 0
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
@@ -74,7 +80,7 @@ spec:
             httpGet:
               path: /connectors
               port: 8083
-            initialDelaySeconds: 90
+            initialDelaySeconds: 0
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3

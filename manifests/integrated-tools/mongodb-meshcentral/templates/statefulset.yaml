@@ -80,7 +80,7 @@ spec:
               command: ["/bin/bash", "/usr/local/bin/readiness-command.sh"]
             initialDelaySeconds: 30
             periodSeconds: 5
-            timeoutSeconds: 10
+            timeoutSeconds: 20
             failureThreshold: 24
             successThreshold: 1
           livenessProbe:

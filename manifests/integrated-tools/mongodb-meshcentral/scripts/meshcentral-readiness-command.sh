@@ -101,42 +101,32 @@ check_mongodb_readiness() {
 
 # Main readiness check logic
 main() {
-    # Try connection without auth first (for initialization phase)
     log "Checking MongoDB readiness on ${DB_HOST}:${MONGODB_PORT}"
-    
+
+    # Try with auth first when credentials are available — avoids a redundant
+    # no-auth mongosh invocation that would exceed the probe timeout.
+    if [ -n "${MONGO_USER}" ] && [ -n "${MONGO_PASS}" ]; then
+        result=$(check_mongodb_readiness "true")
+        exit_code=$?
+
+        if [ $exit_code -eq 0 ]; then
+            log "MongoDB is ready (with auth): $result"
+            exit 0
+        else
+            log "MongoDB not ready (with auth): $result"
+            exit 1
+        fi
+    fi
+
+    # No credentials available — fall back to unauthenticated check
     result=$(check_mongodb_readiness "false")
     exit_code=$?
-    
+
     if [ $exit_code -eq 0 ]; then
         log "MongoDB is ready (no auth): $result"
         exit 0
-    elif [ $exit_code -eq 2 ] || [ "$result" = "AUTH_REQUIRED" ]; then
-        # Auth is required, try with credentials
-        if [ -n "${MONGO_USER}" ] && [ -n "${MONGO_PASS}" ]; then
-            log "Authentication required, retrying with credentials"
-            result=$(check_mongodb_readiness "true")
-            exit_code=$?
-            
-            if [ $exit_code -eq 0 ]; then
-                log "MongoDB is ready (with auth): $result"
-                exit 0
-            else
-                log "MongoDB not ready (with auth): $result"
-                exit 1
-            fi
-        else
-            log "Authentication required but no credentials provided"
-            exit 1
-        fi
     else
-        # MongoDB not ready
         log "MongoDB not ready: $result"
-        
-        # Be lenient with initialization in CI/CD environments
-        if [ "$result" = "NO_REPLSET" ] || [ "$result" = "NOT_INITIALIZED" ]; then
-            log "Initialization in progress"
-        fi
-        
         exit 1
     fi
 }
