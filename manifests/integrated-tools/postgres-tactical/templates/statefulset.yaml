@@ -76,12 +76,14 @@ spec:
             port: metrics
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /metrics
             port: metrics
           initialDelaySeconds: 5
           periodSeconds: 10
+          timeoutSeconds: 10
         resources:
           {{- toYaml .Values.postgres.metrics.resources | nindent 10 }}
         securityContext:
