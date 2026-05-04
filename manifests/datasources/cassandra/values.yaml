@@ -72,10 +72,14 @@ cassandra:
     failureThreshold: 120
 
   livenessProbe:
-    enabled: true
+    enabled: false
+
+  customLivenessProbe:
+    tcpSocket:
+      port: 9042
     initialDelaySeconds: 60
     periodSeconds: 30
-    timeoutSeconds: 30
+    timeoutSeconds: 5
     failureThreshold: 15
 
   extraEnvVars:
