@@ -76,11 +76,11 @@ spec:
             - configMapRef:
                 name: meshcentral-mongodb
           readinessProbe:
-            exec:
-              command: ["/bin/bash", "/usr/local/bin/readiness-command.sh"]
+            tcpSocket:
+              port: 27017
             initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 30
+            timeoutSeconds: 5
             failureThreshold: 24
             successThreshold: 1
           livenessProbe:
