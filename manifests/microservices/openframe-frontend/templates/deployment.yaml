@@ -27,6 +27,12 @@ spec:
           env:
             - name: NEXT_PUBLIC_AUTH_CHECK_INTERVAL
               value: "30000"
+            - name: NEXT_PUBLIC_TENANT_HOST_URL
+              value: "https://support.maximumit.solutions"
+            - name: NEXT_PUBLIC_SHARED_HOST_URL
+              value: "https://support.maximumit.solutions"
+            - name: NEXT_PUBLIC_APP_URL
+              value: "https://support.maximumit.solutions"
           envFrom:
             - configMapRef:
                 name: microservices
