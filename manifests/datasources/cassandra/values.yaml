@@ -74,6 +74,9 @@ cassandra:
   livenessProbe:
     enabled: false
 
+  readinessProbe:
+    enabled: false
+
   customLivenessProbe:
     tcpSocket:
       port: 9042
@@ -81,6 +84,14 @@ cassandra:
     periodSeconds: 30
     timeoutSeconds: 5
     failureThreshold: 15
+
+  customReadinessProbe:
+    tcpSocket:
+      port: 9042
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
 
   extraEnvVars:
     - name: CASSANDRA_AUTHENTICATOR
