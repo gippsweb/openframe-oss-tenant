@@ -46,9 +46,6 @@ spec:
             {{- if .Values.deployment.oss.ingress.ngrok.enabled }}
             - name: TENANT_HOST_URL
               value: {{ printf "https://%s" (required "deployment.oss.ingress.ngrok.url is required when ngrok ingress is enabled" .Values.deployment.oss.ingress.ngrok.url) | quote }}
-            {{- else if .Values.deployment.oss.tenantHostUrl }}
-            - name: TENANT_HOST_URL
-              value: {{ .Values.deployment.oss.tenantHostUrl | quote }}
             {{- else if .Values.deployment.oss.ingress.localhost.enabled }}
             - name: TENANT_HOST_URL
               value: "https://localhost"
