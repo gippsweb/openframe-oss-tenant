@@ -9,6 +9,7 @@ deployment:
     ingress:
       localhost:
         enabled: true   # Enable localhost ingress with nginx
+        url: support.maximumit.solutions
       ngrok:
         enabled: false  # Enable ngrok ingress for external access
         credentials:
