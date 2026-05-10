@@ -27,7 +27,7 @@ registerJob:
     tag: "8.9.1"
 
 image:
-  registry: ghcr.io/flamingo-stack/openframe-oss-tenant
+  registry: ghcr.io/gippsweb/openframe-oss-tenant
   repository: openframe-frontend
   tag: ""
 
