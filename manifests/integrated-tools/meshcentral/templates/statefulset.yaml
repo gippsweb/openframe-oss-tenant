@@ -112,7 +112,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 30  # 30 * 10 = 5 minutes for startup
+            failureThreshold: 90  # 90 * 10 = 15 minutes for startup (npm install on first boot)
           readinessProbe:
             httpGet:
               path: /health.ashx
