@@ -8,12 +8,6 @@ function getEnvVar(key: string): string | undefined {
     }
     return value;
   } catch {
-    if (typeof window !== 'undefined' && (window as any).process?.env) {
-      return (window as any).process.env[key];
-    }
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env[key];
-    }
     return undefined;
   }
 }
