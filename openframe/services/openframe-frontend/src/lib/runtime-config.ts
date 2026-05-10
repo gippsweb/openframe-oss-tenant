@@ -1,6 +1,13 @@
 import { env } from 'next-runtime-env';
 
 function getEnvVar(key: string): string | undefined {
+  // Guard: if window exists but window.__ENV hasn't been set by PublicEnvScript yet
+  // (race condition where async chunks load before the inline script runs),
+  // return undefined rather than falling through to process.env which holds
+  // the baked build-time value.
+  if (typeof window !== 'undefined' && !window['__ENV' as keyof Window]) {
+    return undefined;
+  }
   try {
     const value = env(key);
     if (value === undefined || value === null || value === '') {
