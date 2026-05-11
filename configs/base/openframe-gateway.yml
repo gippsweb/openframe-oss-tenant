@@ -40,6 +40,7 @@ spring:
               - "http://localhost:*"
               - "https://localhost:*"
               - "http://${TENANT_HOST_URL:openframe.ai}"
+              - "https://${TENANT_HOST_URL:openframe.ai}"
               - "https://*.${TENANT_HOST_URL:openframe.ai}"
             allowed-methods: "*"
             allowed-headers: "*"
@@ -58,6 +59,8 @@ spring:
           useInsecureTrustManager: true
         websocket:
           max-frame-payload-length: 1048576 #1MB
+        pool:
+          max-idle-time: 3000ms  # Evict connections idle >3s — below Node.js default 5s keepAliveTimeout
       routes:
         - id: sas
           uri: http://openframe-authorization-server.microservices.svc.cluster.local:9005
