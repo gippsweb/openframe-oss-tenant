@@ -42,7 +42,7 @@ resources:
     memory: "512Mi"
   limits:
     cpu: "500m"
-    memory: "1Gi"
+    memory: "1536Mi"
 
 podAnnotations:
   loki.grafana.com/scrape: "true"
@@ -52,4 +52,4 @@ extraEnv:
   - name: SPRING_CLOUD_GATEWAY_HTTPCLIENT_POOL_MAXIDLETIME
     value: "3000"
   - name: JAVA_TOOL_OPTIONS
-    value: "-Xmx512m -Xms256m"
+    value: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m"
