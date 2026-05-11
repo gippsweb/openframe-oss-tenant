@@ -42,8 +42,10 @@ spec:
               value: "{{ default .Values.global.image.tag .Values.image.tag }}"
             - name: SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING
               value: "true"
-            - name: SPRING_AUTOCONFIGURE_EXCLUDE
-              value: "org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration,org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration,org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration,org.springframework.boot.actuate.autoconfigure.cassandra.CassandraHealthContributorAutoConfiguration"
+            - name: SPRING_DATA_MONGODB_ENABLED
+              value: "true"
+            - name: SPRING_DATA_CASSANDRA_ENABLED
+              value: "false"
             {{- if .Values.deployment.oss.ingress.ngrok.enabled }}
             - name: TENANT_HOST_URL
               value: {{ printf "https://%s" (required "deployment.oss.ingress.ngrok.url is required when ngrok ingress is enabled" .Values.deployment.oss.ingress.ngrok.url) | quote }}
