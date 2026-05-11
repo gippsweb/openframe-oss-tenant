@@ -47,3 +47,7 @@ resources:
 podAnnotations:
   loki.grafana.com/scrape: "true"
   prometheus.io/scrape: "true"
+
+extraEnv:
+  - name: SPRING_CLOUD_GATEWAY_HTTPCLIENT_POOL_MAXIDLETIME
+    value: "3000"
