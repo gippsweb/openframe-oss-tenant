@@ -46,6 +46,14 @@ spec:
               value: "true"
             - name: SPRING_DATA_CASSANDRA_ENABLED
               value: "false"
+            - name: OPENFRAME_API_KEY_STATS_ENABLED
+              value: "true"
+            - name: OPENFRAME_API_KEY_STATS_SYNC_INTERVAL
+              value: "300000"
+            - name: OPENFRAME_API_KEY_STATS_LOCK_AT_MOST_FOR
+              value: "10m"
+            - name: OPENFRAME_API_KEY_STATS_LOCK_AT_LEAST_FOR
+              value: "1m"
             {{- if .Values.deployment.oss.ingress.ngrok.enabled }}
             - name: TENANT_HOST_URL
               value: {{ printf "https://%s" (required "deployment.oss.ingress.ngrok.url is required when ngrok ingress is enabled" .Values.deployment.oss.ingress.ngrok.url) | quote }}
