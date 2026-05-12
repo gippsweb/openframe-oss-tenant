@@ -52,4 +52,4 @@ extraEnv:
   - name: SPRING_CLOUD_GATEWAY_HTTPCLIENT_POOL_MAXIDLETIME
     value: "3000"
   - name: JAVA_TOOL_OPTIONS
-    value: "-Xmx512m -Xms256m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m"
+    value: "-Xmx512m -Xms512m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m"
