@@ -65,11 +65,18 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
+          startupProbe:
+            httpGet:
+              path: /management/{{ default .Values.global.image.tag .Values.image.tag }}/health
+              port: management
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 90
           livenessProbe:
             httpGet:
               path: /management/{{ default .Values.global.image.tag .Values.image.tag }}/health
               port: management
-            initialDelaySeconds: 300
+            initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 5
@@ -77,7 +84,7 @@ spec:
             httpGet:
               path: /management/{{ default .Values.global.image.tag .Values.image.tag }}/health
               port: management
-            initialDelaySeconds: 300
+            initialDelaySeconds: 0
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 5
