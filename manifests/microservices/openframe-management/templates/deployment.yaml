@@ -61,6 +61,9 @@ spec:
             - name: TENANT_HOST_URL
               value: {{ printf "https://%s" (required "deployment.oss.ingress.localhost.url is required when localhost ingress is enabled" .Values.deployment.oss.ingress.localhost.url) | quote }}
             {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
