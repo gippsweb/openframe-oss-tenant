@@ -36,6 +36,8 @@ management:
   health:
     cassandra:
       enabled: false
+    redis:
+      enabled: false
 
   # API Key Statistics configuration
 openframe:
