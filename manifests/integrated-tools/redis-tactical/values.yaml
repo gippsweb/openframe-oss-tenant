@@ -50,6 +50,8 @@ redis:
         memory: "64Mi"
     persistence:
       size: "1Gi"
+    readinessProbe:
+      timeoutSeconds: 5
 
   metrics:
     enabled: true
