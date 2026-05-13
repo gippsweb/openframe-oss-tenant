@@ -39,6 +39,7 @@ openframe:
   # SSO Configuration
   tenancy:
     local-tenant: true
+    base-domain: "${TENANT_BASE_DOMAIN:.support.maximumit.solutions}"
 
   sso:
     google:
