@@ -22,7 +22,7 @@ export function OnboardingSection() {
   const { completionStatus, isLoading } = useOnboardingCompletion();
 
   const handleOrganizationAction = React.useCallback(async () => {
-    router.push('/organizations/edit/new');
+    router.push('/customers/edit/new');
   }, [router]);
 
   const handleDeviceAction = React.useCallback(async () => {
@@ -44,11 +44,11 @@ export function OnboardingSection() {
   const onboardingSteps: OnboardingStepConfig[] = [
     {
       id: 'organizations-setup',
-      title: 'Organizations Setup',
-      description: 'Create and configure your organizational structure',
+      title: 'Customers Setup',
+      description: 'Create and configure your customer structure',
       actionIcon: (color = 'black') => <OrganizationsIcon color={color} className="w-6 h-6" />,
-      actionText: 'Add Organization',
-      completedText: 'Add Organization',
+      actionText: 'Add Customer',
+      completedText: 'Add Customer',
       onAction: handleOrganizationAction,
     },
     {
