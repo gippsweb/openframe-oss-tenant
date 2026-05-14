@@ -83,7 +83,7 @@ security:
   oauth2:
     token:
       access:
-        expiration-seconds: 900
+        expiration-seconds: 3600
       refresh:
         expiration-seconds: 604800
 

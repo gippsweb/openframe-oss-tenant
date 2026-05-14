@@ -169,11 +169,15 @@ openframe:
   api-key-stats:
     redis-ttl: 604800      # 7 days in seconds
 
+spring:
+  session:
+    timeout: 7d
+
 security:
   oauth2:
     token:
       access:
-        expiration-seconds: 900
+        expiration-seconds: 3600
       refresh:
         expiration-seconds: 604800
 
