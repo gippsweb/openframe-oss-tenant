@@ -19,34 +19,6 @@ spec:
     - host: rmm.maximumit.solutions
       http:
         paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: tactical-nginx
-                port:
-                  number: 8000
-          - path: /ws
-            pathType: Prefix
-            backend:
-              service:
-                name: tactical-nginx
-                port:
-                  number: 8000
-          - path: /natsws
-            pathType: Prefix
-            backend:
-              service:
-                name: tactical-nginx
-                port:
-                  number: 8000
-          - path: /static
-            pathType: Prefix
-            backend:
-              service:
-                name: tactical-nginx
-                port:
-                  number: 8000
           - path: /
             pathType: Prefix
             backend:

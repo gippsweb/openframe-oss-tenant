@@ -1,0 +1,150 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tactical-nginx-template
+  namespace: integrated-tools
+data:
+  default.conf: |
+    # nginx status
+    server {
+        listen 8081;
+        server_name _;
+        access_log off;
+        location /nginx_status {
+            stub_status on;
+            allow all;
+        }
+    }
+
+    # Combined frontend + backend on single port.
+    # Routes static asset extensions to tactical-frontend; all other paths to
+    # tactical-backend (Django). This avoids enumerating 20+ Django URL prefixes
+    # in the ingress.
+    server {
+        listen 8080;
+        server_name _;
+
+        resolver ${RESOLVER} valid=10s;
+
+        location ~ ^/ws/ {
+            set $websockets_upstream http://${WEBSOCKETS_BIND_HOST}:${WEBSOCKET_PORT};
+            proxy_pass $websockets_upstream;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_redirect off;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+            proxy_set_header Origin $http_origin;
+        }
+
+        location ~ ^/natsws {
+            set $nats_upstream http://${NATS_STD_BIND_HOST}:${NATS_STANDARD_PORT};
+            proxy_pass $nats_upstream;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Origin $http_origin;
+        }
+
+        # Django static/private/reporting assets from the local container filesystem
+        location /static/ {
+            root /opt/tactical/api/;
+        }
+
+        location /private/ {
+            internal;
+            alias /opt/tactical/api/tacticalrmm/private/;
+        }
+
+        location /assets/ {
+            internal;
+            alias /opt/tactical/reporting/assets/;
+        }
+
+        # Frontend static assets routed by file extension
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map|webmanifest)$ {
+            set $frontend_upstream http://${APP_HOST};
+            proxy_pass $frontend_upstream;
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+            proxy_redirect off;
+        }
+
+        # SPA root
+        location = / {
+            set $frontend_upstream http://${APP_HOST};
+            proxy_pass $frontend_upstream;
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+            proxy_set_header Origin $http_origin;
+            proxy_redirect off;
+        }
+
+        # All other paths go to the Django backend API
+        location / {
+            set $backend_upstream http://${API_HOST};
+            proxy_pass $backend_upstream;
+            proxy_read_timeout 300s;
+            proxy_send_timeout 300s;
+            proxy_http_version 1.1;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+            proxy_set_header Origin $http_origin;
+            proxy_set_header Authorization $http_authorization;
+
+            proxy_hide_header Access-Control-Allow-Origin;
+            proxy_hide_header Access-Control-Allow-Methods;
+            proxy_hide_header Access-Control-Allow-Headers;
+            proxy_hide_header Access-Control-Allow-Credentials;
+            proxy_hide_header Access-Control-Expose-Headers;
+
+            add_header 'Access-Control-Allow-Origin' $http_origin always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, DELETE, PUT, PATCH' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-CSRFToken,Accept,Accept-Encoding' always;
+            add_header 'Access-Control-Expose-Headers' 'Content-Type,Authorization,X-CSRFToken' always;
+
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' $http_origin always;
+                add_header 'Access-Control-Allow-Credentials' 'true' always;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, DELETE, PUT, PATCH' always;
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-CSRFToken,Accept,Accept-Encoding' always;
+                add_header 'Access-Control-Max-Age' 1728000 always;
+                add_header 'Content-Type' 'text/plain charset=UTF-8' always;
+                add_header 'Content-Length' 0 always;
+                return 204;
+            }
+        }
+
+        client_max_body_size 300M;
+    }

@@ -45,7 +45,13 @@ spec:
         volumeMounts:
         - name: nginx-data
           mountPath: /opt/tactical
+        - name: nginx-conf-template
+          mountPath: /tmp/conf.d/default.conf
+          subPath: default.conf
       volumes:
       - name: nginx-data
         persistentVolumeClaim:
           claimName: tactical-nginx
+      - name: nginx-conf-template
+        configMap:
+          name: tactical-nginx-template
