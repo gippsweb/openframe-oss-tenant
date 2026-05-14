@@ -5,6 +5,8 @@ server:
 spring:
   main:
     web-application-type: reactive
+  session:
+    timeout: 7d
   redis:
     enabled: true
     timeout: 2000
@@ -168,10 +170,6 @@ openframe:
   # API Key Statistics configuration
   api-key-stats:
     redis-ttl: 604800      # 7 days in seconds
-
-spring:
-  session:
-    timeout: 7d
 
 security:
   oauth2:
