@@ -43,7 +43,7 @@ spring:
 fleet:
   mdm:
     # Base URL for Fleet MDM server
-    base-url: http://fleetmdm-server.integrated-tools.svc.cluster.local:8070
+    base-url: http://fleet-service.integrated-tools.svc.cluster.local:8080
 
 openframe:
   machine-id:

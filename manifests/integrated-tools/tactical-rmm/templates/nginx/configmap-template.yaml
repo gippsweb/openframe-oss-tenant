@@ -73,7 +73,7 @@ data:
         # Django API routes — all known URL prefixes go to the backend.
         # Everything else (Vue Router SPA routes like /login, /dashboard) falls
         # through to the frontend catch-all which returns index.html.
-        location ~* ^/(v2|agents|alerts|api|automation|beta|checks|clients|core|logout|logoutall|logs|reporting|script-schedules|scripts|services|silk|software|tasks|winupdate)(/|$) {
+        location ~* ^/(_allauth|v2|agents|alerts|api|automation|beta|checks|clients|core|logout|logoutall|logs|reporting|script-schedules|scripts|services|silk|software|tasks|winupdate)(/|$) {
             set $backend_upstream http://${API_HOST};
             proxy_pass $backend_upstream;
             proxy_read_timeout 300s;

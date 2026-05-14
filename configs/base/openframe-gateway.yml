@@ -132,6 +132,22 @@ openframe:
         url: ws://tactical-nats.integrated-tools.svc.cluster.local
         port: "9235"
         path-prefix: /natsws
+    meshcentral-server:
+      backend:
+        url: http://meshcentral-server.integrated-tools.svc.cluster.local
+        port: "8383"
+      websocket:
+        url: ws://meshcentral-server.integrated-tools.svc.cluster.local
+        port: "8383"
+        path-prefix: /
+    fleetmdm-server:
+      backend:
+        url: http://fleet-service.integrated-tools.svc.cluster.local
+        port: "8080"
+      websocket:
+        url: ws://fleet-service.integrated-tools.svc.cluster.local
+        port: "8080"
+        path-prefix: /
   device:
     aspect:
       enabled: false
