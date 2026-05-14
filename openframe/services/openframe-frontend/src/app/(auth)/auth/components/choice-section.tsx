@@ -134,7 +134,8 @@ export function AuthChoiceSection({ onCreateOrganization, onSignIn, isLoading }:
         setIsCheckingDomain(false);
       }
     } else {
-      onCreateOrganization(orgName.trim(), domain, '', orgEmail.trim());
+      const fullDomain = domain.trim() ? `${domain.trim()}.${SAAS_DOMAIN_SUFFIX}` : domain;
+      onCreateOrganization(orgName.trim(), fullDomain, '', orgEmail.trim());
     }
   };
 
@@ -243,12 +244,18 @@ export function AuthChoiceSection({ onCreateOrganization, onSignIn, isLoading }:
                     }
                   }}
                   onChange={e => {
-                    setDomain(e.target.value);
+                    const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                    setDomain(value);
                     setSuggestedDomains([]);
                   }}
                   placeholder="company-name"
                   disabled={isLoading}
                   className="bg-ods-card border-ods-border text-ods-text-secondary font-body text-[18px] font-medium leading-6 placeholder:text-ods-text-secondary p-3"
+                  endAdornment={
+                    <span className="text-ods-text-secondary font-body text-[14px] font-medium whitespace-nowrap select-none">
+                      .{SAAS_DOMAIN_SUFFIX}
+                    </span>
+                  }
                 />
               )}
               {suggestedDomains.length > 0 && (
