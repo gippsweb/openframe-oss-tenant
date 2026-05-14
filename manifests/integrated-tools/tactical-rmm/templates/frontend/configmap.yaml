@@ -3,6 +3,6 @@ kind: ConfigMap
 metadata:
   name: tactical-frontend
 data:
-  TRMM_PROTO: "http"
-  API_LOCALHOST_HOST: "tactical-nginx-0.tactical-nginx.integrated-tools.svc.cluster.local:8000"
-  WS_PROTO: "ws"
+  TRMM_PROTO: "https"
+  API_LOCALHOST_HOST: "rmm.maximumit.solutions"
+  WS_PROTO: "wss"

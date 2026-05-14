@@ -123,7 +123,7 @@ openframe:
     tactical-rmm:
       backend:
         url: http://tactical-backend.integrated-tools.svc.cluster.local
-        port: "8080"
+        port: "8000"
       websocket:
         url: ws://tactical-backend.integrated-tools.svc.cluster.local
         port: "8383"
