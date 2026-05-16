@@ -2,6 +2,21 @@ import { useFeatureFlagsStore } from '@/stores/feature-flags-store';
 import { runtimeEnv } from './runtime-config';
 
 /**
+ * Server-known flag names. Must be passed to `feFeatureFlags(names: ...)`;
+ * the backend only returns flags that are explicitly requested.
+ */
+export const FEATURE_FLAG_NAMES = [
+  'organizationImages',
+  'ssoAutoAllow',
+  'billings',
+  'thinking',
+  'knowledge-base',
+  'notifications',
+  'tickets-board',
+  'batch-approval',
+] as const;
+
+/**
  * Read a feature flag value from the server-loaded store,
  * falling back to the env-var default if the store hasn't loaded
  * or doesn't contain the flag.
@@ -35,16 +50,6 @@ export const featureFlags = {
       return getFlagValue('ssoAutoAllow', () => runtimeEnv.featureSsoAllowDomain());
     },
   },
-  dialogStop: {
-    enabled(): boolean {
-      return getFlagValue('dialog-stop', () => false);
-    },
-  },
-  tokenBasedMemory: {
-    enabled(): boolean {
-      return getFlagValue('token-based-memory', () => false);
-    },
-  },
   subscription: {
     enabled(): boolean {
       return getFlagValue('billings', () => false);
@@ -58,6 +63,21 @@ export const featureFlags = {
   knowledgeBase: {
     enabled(): boolean {
       return getFlagValue('knowledge-base', () => false);
+    },
+  },
+  notifications: {
+    enabled(): boolean {
+      return getFlagValue('notifications', () => false);
+    },
+  },
+  ticketsBoard: {
+    enabled(): boolean {
+      return getFlagValue('tickets-board', () => false);
+    },
+  },
+  batchApproval: {
+    enabled(): boolean {
+      return getFlagValue('batch-approval', () => false);
     },
   },
 } as const;

@@ -12,22 +12,12 @@ export const GET_DIALOG_STATISTICS_QUERY = `
   }
 `;
 
-const CONTEXT_COMPACTION_FRAGMENT = `
-            ... on ContextCompactionStartData {
-              type
-            }
-
-            ... on ContextCompactionEndData {
-              type
-              summary
-            }`;
-
 const THINKING_FRAGMENT = `
             ... on ThinkingData {
               text
             }`;
 
-export function getDialogMessagesQuery({ includeContextCompaction = false, includeThinking = false } = {}) {
+export function getDialogMessagesQuery({ includeThinking = false } = {}) {
   return `
   query GetAllMessages($dialogId: ID!, $chatType: ChatType, $cursor: String, $limit: Int, $sortField: String, $sortDirection: SortDirection) {
     messages(
@@ -70,9 +60,11 @@ export function getDialogMessagesQuery({ includeContextCompaction = false, inclu
               type
               integratedToolType
               toolFunction
+              title
               parameters
               requiresApproval
               approvalStatus
+              toolExecutionRequestId
             }
 
             ... on ExecutedToolData {
@@ -83,6 +75,7 @@ export function getDialogMessagesQuery({ includeContextCompaction = false, inclu
               success
               requiredApproval
               approvalStatus
+              toolExecutionRequestId
             }
 
             ... on ApprovalRequestData {
@@ -91,6 +84,16 @@ export function getDialogMessagesQuery({ includeContextCompaction = false, inclu
               approvalType
               command
               explanation
+              toolCalls {
+                toolExecutionRequestId
+                toolName
+                toolTitle
+                toolExplanation
+                toolType
+                requiresApproval
+                approvalType
+                toolCallArguments
+              }
             }
 
             ... on ApprovalResultData {
@@ -100,7 +103,14 @@ export function getDialogMessagesQuery({ includeContextCompaction = false, inclu
               approvalType
             }
 
-            ${includeContextCompaction ? CONTEXT_COMPACTION_FRAGMENT : ''}
+            ... on ContextCompactionStartData {
+              type
+            }
+
+            ... on ContextCompactionEndData {
+              type
+              summary
+            }
 
             ... on ErrorData {
               error

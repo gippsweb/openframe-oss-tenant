@@ -8,15 +8,25 @@ import {
   PenEditIcon,
   Refresh01LeftIcon,
 } from '@flamingo-stack/openframe-frontend-core/components/icons-v2';
-import { Card, PageLayout, SquareAvatar, Tag } from '@flamingo-stack/openframe-frontend-core/components/ui';
+import {
+  Card,
+  PageLayout,
+  SquareAvatar,
+  Tag,
+  TicketAttachmentsList,
+  TicketDetailSection,
+} from '@flamingo-stack/openframe-frontend-core/components/ui';
 import { useToast } from '@flamingo-stack/openframe-frontend-core/hooks';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Suspense, useCallback, useMemo, useState } from 'react';
+import { useSafeBack } from '@/app/hooks/use-safe-back';
 import { AssignedItemsView } from '@/components/assignments';
 import { formatDate } from '@/lib/format-date';
+import { formatFileSize } from '../../devices/utils/file-manager-utils';
 import { getArchivedArticlesConnectionId } from '../hooks/use-archived-articles';
+import { useDownloadArticleAttachment } from '../hooks/use-download-article-attachment';
 import { useKnowledgeBaseItem } from '../hooks/use-knowledge-base-item';
-import { getKnowledgeBaseItemsConnectionId } from '../hooks/use-knowledge-base-items';
+import { getKnowledgeBaseArticlesConnectionId } from '../hooks/use-knowledge-base-items';
 import { usePublishArticle } from '../hooks/use-publish-article';
 import { useUnpublishArticle } from '../hooks/use-unpublish-article';
 import { ArchiveArticleModal } from './archive-article-modal';
@@ -37,11 +47,12 @@ const STATUS_VARIANT: Record<ArticleStatus, 'success' | 'warning' | 'grey'> = {
 };
 
 function ArticleDetailsContent({ articleId }: { articleId: string }) {
-  const router = useRouter();
+  const handleBack = useSafeBack('/knowledge-base');
   const { toast } = useToast();
   const article = useKnowledgeBaseItem(articleId);
   const { publishArticle, isPending: isPublishing } = usePublishArticle();
   const { unpublishArticle, isPending: isUnpublishing } = useUnpublishArticle();
+  const { download: downloadAttachment } = useDownloadArticleAttachment();
 
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [unarchiveOpen, setUnarchiveOpen] = useState(false);
@@ -53,18 +64,29 @@ function ArticleDetailsContent({ articleId }: { articleId: string }) {
 
   const status = (article.status ?? 'DRAFT') as ArticleStatus;
   const updatedAt = article.updatedAt ?? article.createdAt;
-  const folderConnectionId = getKnowledgeBaseItemsConnectionId({
+  const articlesConnectionId = getKnowledgeBaseArticlesConnectionId({
     parentId: article.parentId ?? null,
     search: null,
+    tagIds: [],
   });
   const archiveConnectionId = getArchivedArticlesConnectionId({ search: null, tagIds: null });
-  const sourceConnectionId = status === 'ARCHIVED' ? archiveConnectionId : folderConnectionId;
+  const sourceConnectionId = status === 'ARCHIVED' ? archiveConnectionId : articlesConnectionId;
 
   const authorName = useMemo(() => {
     if (!article.author) return null;
     const parts = [article.author.firstName, article.author.lastName].filter(Boolean);
     return parts.length ? parts.join(' ') : (article.author.email ?? null);
   }, [article.author]);
+
+  const uiAttachments = useMemo(() => {
+    if (!article.attachments) return [];
+    return article.attachments.map(att => ({
+      id: att.id,
+      fileName: att.fileName,
+      fileSize: att.fileSize ? formatFileSize(att.fileSize) : '',
+      onDownload: () => downloadAttachment(att.id, att.fileName),
+    }));
+  }, [article.attachments, downloadAttachment]);
 
   const handlePublish = useCallback(async () => {
     try {
@@ -145,7 +167,7 @@ function ArticleDetailsContent({ articleId }: { articleId: string }) {
   return (
     <PageLayout
       title={article.name}
-      backButton={{ label: 'Back to Knowledge Base', onClick: () => router.push('/knowledge-base') }}
+      backButton={{ label: 'Back', onClick: handleBack }}
       actionsVariant="menu-primary"
       actions={actions}
       menuActions={menuActions}
@@ -185,6 +207,12 @@ function ArticleDetailsContent({ articleId }: { articleId: string }) {
 
       <SimpleMarkdownRenderer content={article.content ?? ''} textSize="compact" />
 
+      {uiAttachments.length > 0 && (
+        <TicketDetailSection label="Attachments">
+          <TicketAttachmentsList attachments={uiAttachments} />
+        </TicketDetailSection>
+      )}
+
       <AssignedItemsView itemId={article.id} itemType="KNOWLEDGE_ARTICLE" />
 
       <ArchiveArticleModal
@@ -210,11 +238,11 @@ function ArticleDetailsContent({ articleId }: { articleId: string }) {
 }
 
 function ArticleDetailsFallback() {
-  const router = useRouter();
+  const handleBack = useSafeBack('/knowledge-base');
   return (
     <PageLayout
       title=""
-      backButton={{ label: 'Back to Knowledge Base', onClick: () => router.push('/knowledge-base') }}
+      backButton={{ label: 'Back', onClick: handleBack }}
       className="px-[var(--spacing-system-l)] pb-[var(--spacing-system-l)]"
     >
       <div className="h-32 w-full rounded bg-ods-card animate-pulse" />

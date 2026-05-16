@@ -21,17 +21,7 @@ export const GET_MINGO_DIALOGS_QUERY = `
  }
 `;
 
-const TOKEN_USAGE_FRAGMENT = `
-    tokenUsage {
-      chatType
-      inputTokensSize
-      outputTokensSize
-      totalTokensSize
-      contextSize
-    }`;
-
-export function getMingoDialogQuery({ includeTokenUsage = false } = {}) {
-  return `
+export const GET_MINGO_DIALOG_QUERY = `
   query GetDialog($id: ID!) {
     dialog(id: $id) {
     id
@@ -56,28 +46,23 @@ export function getMingoDialogQuery({ includeTokenUsage = false } = {}) {
       dialogId
       createdAt
     }
-    ${includeTokenUsage ? TOKEN_USAGE_FRAGMENT : ''}
+    tokenUsage {
+      chatType
+      inputTokensSize
+      outputTokensSize
+      totalTokensSize
+      contextSize
+    }
     }
   }
 `;
-}
-
-const CONTEXT_COMPACTION_FRAGMENT = `
-            ... on ContextCompactionStartData {
-              type
-            }
-
-            ... on ContextCompactionEndData {
-              type
-              summary
-            }`;
 
 const THINKING_FRAGMENT = `
             ... on ThinkingData {
               text
             }`;
 
-export function getMingoDialogMessagesQuery({ includeContextCompaction = false, includeThinking = false } = {}) {
+export function getMingoDialogMessagesQuery({ includeThinking = false } = {}) {
   return `
   query GetAllMessages($dialogId: ID!, $cursor: String, $limit: Int, $sortField: String, $sortDirection: SortDirection) {
     messages(
@@ -115,9 +100,11 @@ export function getMingoDialogMessagesQuery({ includeContextCompaction = false, 
               type
               integratedToolType
               toolFunction
+              title
               parameters
               requiresApproval
               approvalStatus
+              toolExecutionRequestId
             }
 
             ... on ExecutedToolData {
@@ -128,6 +115,7 @@ export function getMingoDialogMessagesQuery({ includeContextCompaction = false, 
               success
               requiredApproval
               approvalStatus
+              toolExecutionRequestId
             }
 
             ... on ApprovalRequestData {
@@ -136,6 +124,16 @@ export function getMingoDialogMessagesQuery({ includeContextCompaction = false, 
               approvalType
               command
               explanation
+              toolCalls {
+                toolExecutionRequestId
+                toolName
+                toolTitle
+                toolExplanation
+                toolType
+                requiresApproval
+                approvalType
+                toolCallArguments
+              }
             }
 
             ... on ApprovalResultData {
@@ -145,7 +143,14 @@ export function getMingoDialogMessagesQuery({ includeContextCompaction = false, 
               approvalType
             }
 
-            ${includeContextCompaction ? CONTEXT_COMPACTION_FRAGMENT : ''}
+            ... on ContextCompactionStartData {
+              type
+            }
+
+            ... on ContextCompactionEndData {
+              type
+              summary
+            }
 
             ... on ErrorData {
               error

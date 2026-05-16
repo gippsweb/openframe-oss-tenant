@@ -15,6 +15,22 @@ use tauri::menu::Menu;
 use tauri::ActivationPolicy;
 
 #[cfg(target_os = "macos")]
+static DOCK_QUIT_ACTION: std::sync::OnceLock<Box<dyn Fn() + Send + Sync>> =
+    std::sync::OnceLock::new();
+
+#[cfg(target_os = "macos")]
+unsafe extern "C" fn on_application_should_terminate(
+    _this: *mut objc2::runtime::AnyObject,
+    _sel: objc2::runtime::Sel,
+    _sender: *mut objc2::runtime::AnyObject,
+) -> usize {
+    if let Some(action) = DOCK_QUIT_ACTION.get() {
+        action();
+    }
+    0 // NSTerminateCancel
+}
+
+#[cfg(target_os = "macos")]
 fn restore_dock_icon() {
     use objc2::AnyThread;
     use objc2_app_kit::{NSApplication, NSImage};
@@ -186,8 +202,15 @@ pub fn run() {
             }
             
             let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            #[cfg(target_os = "macos")]
+            let menu = Menu::with_items(app, &[&show_i])?;
+
+            #[cfg(not(target_os = "macos"))]
+            let menu = {
+                let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                Menu::with_items(app, &[&show_i, &quit_i])?
+            };
             
             let icons_dir = app.path().resource_dir()
                 .unwrap_or_else(|_| std::path::PathBuf::from(""))
@@ -292,6 +315,54 @@ pub fn run() {
                         });
                     }
                 });
+
+                let h1 = app.handle().clone();
+                let h2 = app.handle().clone();
+                let _ = DOCK_QUIT_ACTION.set(Box::new(move || {
+                    for (_, window) in h1.webview_windows() {
+                        let _ = window.hide();
+                    }
+                    let h = h2.clone();
+                    let _ = h1.run_on_main_thread(move || {
+                        let _ = h.set_activation_policy(ActivationPolicy::Accessory);
+                    });
+                }));
+
+                let mtm = objc2_foundation::MainThreadMarker::new().unwrap();
+                unsafe {
+                    use std::ffi::c_char;
+                    use objc2::runtime::{AnyClass, AnyObject, Sel};
+                    use objc2::{msg_send, sel};
+                    use objc2_app_kit::NSApplication;
+
+                    extern "C" {
+                        fn class_replaceMethod(
+                            cls: *const AnyClass,
+                            name: Sel,
+                            imp: Option<unsafe extern "C" fn()>,
+                            types: *const c_char,
+                        ) -> Option<unsafe extern "C" fn()>;
+                    }
+
+                    let ns_app = NSApplication::sharedApplication(mtm);
+                    let delegate: *mut AnyObject = msg_send![&*ns_app, delegate];
+                    if !delegate.is_null() {
+                        let class: *const AnyClass = msg_send![delegate, class];
+                        class_replaceMethod(
+                            class,
+                            sel!(applicationShouldTerminate:),
+                            Some(std::mem::transmute(
+                                on_application_should_terminate
+                                    as unsafe extern "C" fn(
+                                        *mut AnyObject,
+                                        Sel,
+                                        *mut AnyObject,
+                                    ) -> usize,
+                            )),
+                            c"Q@:@".as_ptr(),
+                        );
+                    }
+                }
             }
 
             // Show window on startup unless --background flag is passed

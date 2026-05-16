@@ -4,11 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { applyAssignmentsDiff, useAssignedItems } from '@/components/assignments';
+import { useApplyAssignmentsDiff, useAssignedItems } from '@/components/assignments';
 import { apiClient } from '@/lib/api-client';
-import { featureFlags } from '@/lib/feature-flags';
 import { API_ENDPOINTS, CREATION_SOURCE } from '../constants';
-import { getTicketQuery } from '../queries/ticket-queries';
+import { GET_TICKET_QUERY } from '../queries/ticket-queries';
 import { type CreateTicketFormData, createTicketSchema } from '../types/create-ticket.types';
 import type { Ticket } from '../types/ticket.types';
 import type { GraphQlResponse } from '../utils/graphql';
@@ -27,13 +26,13 @@ export function useCreateTicketForm({ ticketId }: UseCreateTicketFormOptions = {
   const createTicketMutation = useCreateTicket();
   const updateTicketMutation = useUpdateTicket();
   const tempAttachments = useTempAttachments();
+  const { mutateAsync: applyAssignmentsDiff } = useApplyAssignmentsDiff();
 
   const { data: ticket, isLoading: isLoadingTicket } = useQuery({
     queryKey: ticketsQueryKeys.detail(ticketId || ''),
     queryFn: async () => {
-      const includeTokenUsage = featureFlags.tokenBasedMemory.enabled();
       const response = await apiClient.post<GraphQlResponse<{ ticket: Ticket }>>(API_ENDPOINTS.GRAPHQL, {
-        query: getTicketQuery({ includeTokenUsage }),
+        query: GET_TICKET_QUERY,
         variables: { id: ticketId },
       });
       return extractGraphQlData(response).ticket;
@@ -106,7 +105,12 @@ export function useCreateTicketForm({ ticketId }: UseCreateTicketFormOptions = {
         tempAttachmentIds: tempAttachmentIds.length ? tempAttachmentIds : undefined,
       });
 
-      await applyAssignmentsDiff(ticketId, 'TICKET', assignedItems.value, nextAssignments);
+      await applyAssignmentsDiff({
+        itemId: ticketId,
+        itemType: 'TICKET',
+        prev: assignedItems.value,
+        next: nextAssignments,
+      });
     } else {
       const tempAttachmentIds = tempAttachments.getTempAttachmentIds();
 
@@ -121,7 +125,12 @@ export function useCreateTicketForm({ ticketId }: UseCreateTicketFormOptions = {
       });
 
       if (created?.id && Object.keys(nextAssignments).length > 0) {
-        await applyAssignmentsDiff(created.id, 'TICKET', {}, nextAssignments);
+        await applyAssignmentsDiff({
+          itemId: created.id,
+          itemType: 'TICKET',
+          prev: {},
+          next: nextAssignments,
+        });
       }
     }
   });

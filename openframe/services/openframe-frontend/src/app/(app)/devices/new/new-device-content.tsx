@@ -8,7 +8,6 @@ import { Autocomplete } from '@flamingo-stack/openframe-frontend-core/components
 import { useToast } from '@flamingo-stack/openframe-frontend-core/hooks';
 import { DEFAULT_OS_PLATFORM, type OSPlatformId } from '@flamingo-stack/openframe-frontend-core/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { graphql, useLazyLoadQuery } from 'react-relay';
@@ -18,6 +17,7 @@ import { OrgAvatar } from '@/app/components/shared';
 import { OsPlatformSelector } from '@/app/components/shared/os-platform-selector';
 import { isValidTag, type TagEntryWithId, TagsEditor } from '@/app/components/shared/tags';
 import { useCopyToClipboard } from '@/app/hooks/use-copy-to-clipboard';
+import { useSafeBack } from '@/app/hooks/use-safe-back';
 import { AVAILABLE_PLATFORMS, DISABLED_PLATFORMS } from '@/lib/platforms';
 import { AntivirusWarning } from '../components/antivirus-warning';
 import { useInstallCommand } from '../hooks/use-install-command';
@@ -41,14 +41,14 @@ const newDeviceContentQuery = graphql`
 `;
 
 const newDeviceSchema = z.object({
-  organizationId: z.string().min(1, 'Organization is required'),
+  organizationId: z.string().min(1, 'Customer is required'),
   platform: z.custom<OSPlatformId>(),
 });
 
 type NewDeviceFormValues = z.infer<typeof newDeviceSchema>;
 
 export function NewDeviceContent() {
-  const router = useRouter();
+  const handleBack = useSafeBack('/devices');
   const { toast } = useToast();
 
   // Relay query for organizations
@@ -110,7 +110,7 @@ export function NewDeviceContent() {
   const validateBeforeAction = useCallback(async () => {
     const valid = await form.trigger();
     if (!valid) {
-      toast({ title: 'Validation error', description: 'Please select an organization', variant: 'destructive' });
+      toast({ title: 'Validation error', description: 'Please select a customer', variant: 'destructive' });
       return false;
     }
     if (!initialKey) {
@@ -227,7 +227,7 @@ export function NewDeviceContent() {
   return (
     <DetailPageContainer
       title="New Device"
-      backButton={{ label: 'Back to Devices', onClick: () => router.push('/devices') }}
+      backButton={{ label: 'Back', onClick: handleBack }}
       padding="none"
       className="p-[var(--spacing-system-l)]"
     >
@@ -241,8 +241,8 @@ export function NewDeviceContent() {
                 options={orgOptions}
                 value={field.value || null}
                 onChange={val => field.onChange(val ?? '')}
-                label="Select Organization"
-                placeholder="Choose organization"
+                label="Select Customer"
+                placeholder="Choose customer"
                 loading={false}
                 error={fieldState.error?.message}
                 startAdornment={

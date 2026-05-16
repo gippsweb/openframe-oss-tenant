@@ -16,12 +16,9 @@ import {
   BoxArchiveIcon,
   ChatsIcon,
   CheckCircleIcon,
-  ClipboardListIcon,
-  ComputerMouseIcon,
   HourglassClockIcon,
   MonitorIcon,
   PenEditIcon,
-  TerminalIcon,
 } from '@flamingo-stack/openframe-frontend-core/components/icons-v2';
 import {
   type ActionsMenuGroup,
@@ -37,13 +34,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAiModel } from '@/app/hooks/use-ai-model';
+import { useSafeBack } from '@/app/hooks/use-safe-back';
 import { AssignedItemsView } from '@/components/assignments';
 import { apiClient } from '@/lib/api-client';
 import { extractPendingApprovals, stripPendingApprovals } from '@/lib/chat-history';
-import { featureFlags } from '@/lib/feature-flags';
 import { formatDateTime } from '@/lib/format-date';
 import { getFullImageUrl } from '@/lib/image-url';
 import { useAuthStore } from '@/stores';
+import { useDeviceDetails } from '../../devices/hooks/use-device-details';
+import { getDeviceActionAvailability } from '../../devices/utils/device-action-utils';
+import { buildDeviceMenuItems } from '../../devices/utils/device-menu-items';
 import { formatFileSize } from '../../devices/utils/file-manager-utils';
 import {
   APPROVAL_STATUS,
@@ -78,6 +78,7 @@ interface TicketDetailsViewProps {
 
 export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
   const router = useRouter();
+  const handleBackToTickets = useSafeBack('/tickets');
   const { toast } = useToast();
   const initialAiModel = useAiModel();
   const [currentClientModel, setCurrentClientModel] = useState<{ provider: string; displayName: string } | null>(null);
@@ -88,6 +89,18 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
 
   const queryClient = useQueryClient();
   const { ticket: dialog, isPending: isLoading, error: dialogError } = useTicketDetail(ticketId);
+
+  // Device referenced by the ticket. Same hook & availability utility used by
+  // the Devices view, so remote-action gating stays in sync across views.
+  const machineId = useMemo(() => {
+    if (!dialog) return undefined;
+    return dialog.deviceId || (isClientOwner(dialog.owner) ? dialog.owner.machineId : undefined);
+  }, [dialog, isClientOwner]);
+  const { deviceDetails } = useDeviceDetails(machineId);
+  const actionAvailability = useMemo(
+    () => (deviceDetails ? getDeviceActionAvailability(deviceDetails) : null),
+    [deviceDetails],
+  );
 
   const { client, admin, clearChatState, setAccumulatorCallbacks, updateApprovalStatusInMessages } =
     useTicketDetailsStore();
@@ -417,7 +430,6 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
     if (!dialog) return [];
 
     const isArchived = dialog.status === DIALOG_STATUS.ARCHIVED;
-    const machineId = dialog.deviceId || (isClientOwner(dialog.owner) ? dialog.owner.machineId : undefined);
 
     const ticketItems: ActionsMenuItem[] = [];
     const deviceItems: ActionsMenuItem[] = [];
@@ -432,39 +444,15 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
     }
 
     if (machineId) {
-      deviceItems.push(
-        {
-          id: 'device-details',
-          label: 'Device Details',
-          icon: <MonitorIcon className="text-ods-text-secondary" />,
-          href: `/devices/details/${machineId}`,
-        },
-        {
-          id: 'remote-shell',
-          label: 'Remote Shell',
-          icon: <TerminalIcon className="text-ods-text-secondary" />,
-          href: `/devices/details/${machineId}/remote-shell`,
-        },
-        {
-          id: 'remote-control',
-          label: 'Remote Control',
-          icon: <ComputerMouseIcon className="text-ods-text-secondary" />,
-          href: `/devices/details/${machineId}/remote-desktop`,
-        },
-        {
-          id: 'device-logs',
-          label: 'Device Logs',
-          icon: <ClipboardListIcon className="text-ods-text-secondary" />,
-          href: `/devices/details/${machineId}?tab=logs`,
-        },
-      );
+      const items = buildDeviceMenuItems({ deviceId: machineId, availability: actionAvailability });
+      deviceItems.push(items.deviceDetails, items.remoteShell, items.remoteControl, items.deviceLogs);
     }
 
     const groups: ActionsMenuGroup[] = [];
     if (ticketItems.length > 0) groups.push({ items: ticketItems, separator: deviceItems.length > 0 });
     if (deviceItems.length > 0) groups.push({ items: deviceItems });
     return groups;
-  }, [dialog, isClientOwner, router]);
+  }, [dialog, machineId, actionAvailability, router]);
 
   const pageActions = useMemo<PageActionButton[]>(() => {
     if (!dialog) return [];
@@ -537,14 +525,14 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
   const deviceMachineId = dialog.deviceId || (isClientOwner(dialog.owner) ? dialog.owner.machineId : undefined);
   const clientTokenUsage = dialog.tokenUsage?.find(t => t.chatType === CHAT_TYPE.CLIENT);
   const adminTokenUsage = dialog.tokenUsage?.find(t => t.chatType === CHAT_TYPE.ADMIN);
-  const showTokenMemory = !isClosed && featureFlags.tokenBasedMemory.enabled();
+  const showTokenMemory = !isClosed;
 
   return (
     <PageLayout
       title={dialog.title || 'Untitled Dialog'}
       backButton={{
-        label: 'Back to Tickets',
-        onClick: () => router.push('/tickets'),
+        label: 'Back',
+        onClick: handleBackToTickets,
       }}
       className="px-[var(--spacing-system-l)] pb-[var(--spacing-system-l)] h-[calc(100%)]"
       actions={pageActions}
@@ -595,7 +583,6 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
         description={dialog.description || dialog.title || ''}
         attachments={uiAttachments}
         tags={(dialog.labels || []).map(l => l.key)}
-        knowledgeBaseArticles={[]}
         notes={uiNotes}
         isAddingNote={addNoteMutation.isPending}
         onAddNote={text => {
@@ -608,7 +595,13 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
           deleteNoteMutation.mutate(id);
         }}
       />
-      {/* <AssignedItemsView itemId={dialog.id} itemType="TICKET" className="hidden lg:block shrink-0" /> */}
+      {isTicketInfoExpanded && (
+        <AssignedItemsView
+          itemId={dialog.id}
+          itemType="TICKET"
+          className="hidden lg:block shrink-0 mt-[var(--spacing-system-mf)]"
+        />
+      )}
 
       {/* Chat Section */}
       <div className="flex-1 flex flex-col min-h-[500px]">
@@ -673,7 +666,6 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
               description={dialog.description || dialog.title || ''}
               attachments={uiAttachments}
               tags={(dialog.labels || []).map(l => l.key)}
-              knowledgeBaseArticles={[]}
               notes={uiNotes}
               onAddNote={text => {
                 if (dialog?.id) addNoteMutation.mutate({ content: text });
@@ -685,6 +677,7 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
                 deleteNoteMutation.mutate(id);
               }}
             />
+            <AssignedItemsView itemId={dialog.id} itemType="TICKET" className="mt-[var(--spacing-system-mf)]" />
           </div>
         )}
 
@@ -807,11 +800,7 @@ export function TicketDetailsView({ ticketId }: TicketDetailsViewProps) {
                   reserveAvatarOffset={false}
                   placeholder="Enter your Request..."
                   onSend={handleSendAdminMessage}
-                  onStop={
-                    featureFlags.dialogStop.enabled() && isAdminChatTyping && adminPendingApprovals.length === 0
-                      ? handleStopGeneration
-                      : undefined
-                  }
+                  onStop={isAdminChatTyping && adminPendingApprovals.length === 0 ? handleStopGeneration : undefined}
                   sending={
                     isSendingAdminMessage ||
                     isAdminChatTyping ||
